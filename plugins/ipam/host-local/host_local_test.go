@@ -28,6 +28,7 @@ import (
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/plugins/pkg/testutils"
 
+	"github.com/containernetworking/plugins/plugins/ipam/host-local/backend/disk"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -37,7 +38,7 @@ var _ = Describe("host-local Operations", func() {
 		const ifname string = "eth0"
 		const nspath string = "/some/where"
 
-		tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+		tmpDir, err := getTmpDir()
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(tmpDir)
 
@@ -112,7 +113,7 @@ var _ = Describe("host-local Operations", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(contents)).To(Equal("dummy"))
 
-		ipFilePath2 := filepath.Join(tmpDir, "mynet", "2001:db8:1::2")
+		ipFilePath2 := filepath.Join(tmpDir, disk.GetEscapedPath("mynet", "2001:db8:1::2"))
 		contents, err = ioutil.ReadFile(ipFilePath2)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(contents)).To(Equal("dummy"))
@@ -142,7 +143,7 @@ var _ = Describe("host-local Operations", func() {
 		const ifname string = "eth0"
 		const nspath string = "/some/where"
 
-		tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+		tmpDir, err := getTmpDir()
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(tmpDir)
 
@@ -176,7 +177,7 @@ var _ = Describe("host-local Operations", func() {
 		const ifname string = "eth0"
 		const nspath string = "/some/where"
 
-		tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+		tmpDir, err := getTmpDir()
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(tmpDir)
 
@@ -245,7 +246,7 @@ var _ = Describe("host-local Operations", func() {
 		const ifname string = "eth0"
 		const nspath string = "/some/where"
 
-		tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+		tmpDir, err := getTmpDir()
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(tmpDir)
 
@@ -296,7 +297,7 @@ var _ = Describe("host-local Operations", func() {
 		const ifname string = "eth0"
 		const nspath string = "/some/where"
 
-		tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+		tmpDir, err := getTmpDir()
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(tmpDir)
 
@@ -331,7 +332,7 @@ var _ = Describe("host-local Operations", func() {
 		const ifname string = "eth0"
 		const nspath string = "/some/where"
 
-		tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+		tmpDir, err := getTmpDir()
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(tmpDir)
 
@@ -376,7 +377,7 @@ var _ = Describe("host-local Operations", func() {
 		const ifname string = "eth0"
 		const nspath string = "/some/where"
 
-		tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+		tmpDir, err := getTmpDir()
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(tmpDir)
 
@@ -426,7 +427,7 @@ var _ = Describe("host-local Operations", func() {
 		const ifname string = "eth0"
 		const nspath string = "/some/where"
 
-		tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+		tmpDir, err := getTmpDir()
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(tmpDir)
 
@@ -476,7 +477,7 @@ var _ = Describe("host-local Operations", func() {
 		const ifname string = "eth0"
 		const nspath string = "/some/where"
 
-		tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+		tmpDir, err := getTmpDir()
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(tmpDir)
 
@@ -516,6 +517,15 @@ var _ = Describe("host-local Operations", func() {
 		Expect(err.Error()).To(HavePrefix("failed to allocate all requested IPs: 10.1.2."))
 	})
 })
+
+func getTmpDir() (string, error) {
+	tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+	if err == nil {
+		tmpDir = filepath.ToSlash(tmpDir)
+	}
+
+	return tmpDir, err
+}
 
 func mustCIDR(s string) net.IPNet {
 	ip, n, err := net.ParseCIDR(s)

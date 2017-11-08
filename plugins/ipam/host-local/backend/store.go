@@ -19,7 +19,6 @@ import "net"
 type Store interface {
 	Lock() error
 	Unlock() error
-	Close() error
 	Reserve(id string, ip net.IP, rangeID string) (bool, error)
 	LastReservedIP(rangeID string) (net.IP, error)
 	Release(ip net.IP) error
