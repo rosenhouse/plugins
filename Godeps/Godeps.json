@@ -11,6 +11,11 @@
 			"Rev": "72bdc8eae2aef913234599b837f5dda445ca9bd9"
 		},
 		{
+			"ImportPath": "github.com/containernetworking/cni/cnitool",
+			"Comment": "v0.6.0-68-g142cde0",
+			"Rev": "142cde0c766cd6055cc7fdfdcb44579c0c9c35bf"
+		},
+		{
 			"ImportPath": "github.com/containernetworking/cni/libcni",
 			"Comment": "v0.6.0-68-g142cde0",
 			"Rev": "142cde0c766cd6055cc7fdfdcb44579c0c9c35bf"

@@ -29,7 +29,7 @@ func TestIntegration(t *testing.T) {
 var cnitoolBinPath string
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	binaryPath, err := gexec.Build("github.com/containernetworking/cni/cnitool")
+	binaryPath, err := gexec.Build("../vendor/github.com/containernetworking/cni/cnitool")
 	Expect(err).NotTo(HaveOccurred())
 	return []byte(binaryPath)
 }, func(data []byte) {
