@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/containernetworking/plugins",
-	"GoVersion": "go1.7",
-	"GodepVersion": "v79",
+	"GoVersion": "go1.10",
+	"GodepVersion": "v80",
 	"Packages": [
 		"./..."
 	],
@@ -12,38 +12,38 @@
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/libcni",
-			"Comment": "v0.6.0-rc1",
-			"Rev": "a2da8f8d7fd8e6dc25f336408a8ac86f050fbd88"
+			"Comment": "v0.6.0-68-g142cde0",
+			"Rev": "142cde0c766cd6055cc7fdfdcb44579c0c9c35bf"
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/invoke",
-			"Comment": "v0.6.0-rc1",
-			"Rev": "a2da8f8d7fd8e6dc25f336408a8ac86f050fbd88"
+			"Comment": "v0.6.0-68-g142cde0",
+			"Rev": "142cde0c766cd6055cc7fdfdcb44579c0c9c35bf"
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/skel",
-			"Comment": "v0.6.0-rc1",
-			"Rev": "a2da8f8d7fd8e6dc25f336408a8ac86f050fbd88"
+			"Comment": "v0.6.0-68-g142cde0",
+			"Rev": "142cde0c766cd6055cc7fdfdcb44579c0c9c35bf"
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/types",
-			"Comment": "v0.6.0-rc1",
-			"Rev": "a2da8f8d7fd8e6dc25f336408a8ac86f050fbd88"
+			"Comment": "v0.6.0-68-g142cde0",
+			"Rev": "142cde0c766cd6055cc7fdfdcb44579c0c9c35bf"
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/types/020",
-			"Comment": "v0.6.0-rc1",
-			"Rev": "a2da8f8d7fd8e6dc25f336408a8ac86f050fbd88"
+			"Comment": "v0.6.0-68-g142cde0",
+			"Rev": "142cde0c766cd6055cc7fdfdcb44579c0c9c35bf"
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/types/current",
-			"Comment": "v0.6.0-rc1",
-			"Rev": "a2da8f8d7fd8e6dc25f336408a8ac86f050fbd88"
+			"Comment": "v0.6.0-68-g142cde0",
+			"Rev": "142cde0c766cd6055cc7fdfdcb44579c0c9c35bf"
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/version",
-			"Comment": "v0.6.0-rc1",
-			"Rev": "a2da8f8d7fd8e6dc25f336408a8ac86f050fbd88"
+			"Comment": "v0.6.0-68-g142cde0",
+			"Rev": "142cde0c766cd6055cc7fdfdcb44579c0c9c35bf"
 		},
 		{
 			"ImportPath": "github.com/coreos/go-iptables/iptables",
