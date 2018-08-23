@@ -1,4 +1,4 @@
-// Copyright 2014 CNI authors
+// Copyright 2017 CNI authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"runtime"
+	"strings"
+
+	"github.com/juju/errors"
 
 	"github.com/Microsoft/hcsshim"
 	"github.com/containernetworking/cni/pkg/skel"
@@ -28,21 +30,21 @@ import (
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/containernetworking/plugins/pkg/hns"
 	"github.com/containernetworking/plugins/pkg/ipam"
-	"strings"
 )
 
 type NetConf struct {
 	hns.NetConf
 
-	IPMasq            bool
-	endpointMacPrefix string `json:"endpointMacPrefix,omitempty"`
+	IPMasq            bool   `json:"ipMasq"`
+	EndpointMacPrefix string `json:"endpointMacPrefix,omitempty"`
 }
 
 type K8sCniEnvArgs struct {
 	types.CommonArgs
-	K8S_POD_NAMESPACE          types.UnmarshallableString `json:"K8S_POD_NAMESPACE,omitempty"`
-	K8S_POD_NAME               types.UnmarshallableString `json:"K8S_POD_NAME,omitempty"`
-	K8S_POD_INFRA_CONTAINER_ID types.UnmarshallableString `json:"K8S_POD_INFRA_CONTAINER_ID,omitempty"`
+
+	PodNamespace types.UnmarshallableString `json:"K8S_POD_NAMESPACE,omitempty"`
+	// PodName             types.UnmarshallableString `json:"K8S_POD_NAME,omitempty"`
+	// PodInfraContainerID types.UnmarshallableString `json:"K8S_POD_INFRA_CONTAINER_ID,omitempty"`
 }
 
 func init() {
@@ -64,7 +66,7 @@ func parseCniArgs(args string) (*K8sCniEnvArgs, error) {
 func loadNetConf(bytes []byte) (*NetConf, string, error) {
 	n := &NetConf{}
 	if err := json.Unmarshal(bytes, n); err != nil {
-		return nil, "", fmt.Errorf("failed to load netconf: %v", err)
+		return nil, "", errors.Annotatef(err, "failed to load netconf")
 	}
 	return n, n.CNIVersion, nil
 }
@@ -72,29 +74,34 @@ func loadNetConf(bytes []byte) (*NetConf, string, error) {
 func cmdAdd(args *skel.CmdArgs) error {
 	log.Printf("[cni-net] Processing ADD command with args {ContainerID:%v Netns:%v IfName:%v Args:%v Path:%v}.",
 		args.ContainerID, args.Netns, args.IfName, args.Args, args.Path)
+
 	n, cniVersion, err := loadNetConf(args.StdinData)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "error while loadNetConf")
 	}
 
 	cniargs, err := parseCniArgs(args.Args)
-	k8sNamespace := "default"
-	if err == nil {
-		k8sNamespace = string(cniargs.K8S_POD_NAMESPACE)
+	if err != nil {
+		return errors.Annotate(err, "error while parseCniArgs")
 	}
 
-	if n.endpointMacPrefix != "" {
-		if len(n.endpointMacPrefix) != 5 || n.endpointMacPrefix[2] != '-' {
-			return fmt.Errorf("endpointMacPrefix [%v] is invalid, value must be of the format xx-xx", n.endpointMacPrefix)
+	k8sNamespace := "default"
+	if len(cniargs.PodNamespace) != 0 {
+		k8sNamespace = string(cniargs.PodNamespace)
+	}
+
+	if n.EndpointMacPrefix != "" {
+		if len(n.EndpointMacPrefix) != 5 || n.EndpointMacPrefix[2] != '-' {
+			return fmt.Errorf("endpointMacPrefix [%v] is invalid, value must be of the format xx-xx", n.EndpointMacPrefix)
 		}
 	} else {
-		n.endpointMacPrefix = "0E-2A"
+		n.EndpointMacPrefix = "0E-2A"
 	}
 
 	networkName := n.Name
 	hnsNetwork, err := hcsshim.GetHNSNetworkByName(networkName)
 	if err != nil {
-		return fmt.Errorf("Error while GETHNSNewtorkByName(%v): %v", networkName, err)
+		return errors.Annotatef(err, "error while GETHNSNewtorkByName(%f)", networkName)
 	}
 
 	if hnsNetwork == nil {
@@ -111,13 +118,13 @@ func cmdAdd(args *skel.CmdArgs) error {
 		// run the IPAM plugin and get back the config to apply
 		r, err := ipam.ExecAdd(n.IPAM.Type, args.StdinData)
 		if err != nil {
-			return nil, fmt.Errorf("Error while ipam.ExecAdd: %v", err)
+			return nil, errors.Annotatef(err, "error while ipam.ExecAdd")
 		}
 
 		// Convert whatever the IPAM result was into the current Result type
 		result, err := current.NewResultFromResult(r)
 		if err != nil {
-			return nil, fmt.Errorf("Error while NewResultFromResult: %v", err)
+			return nil, errors.Annotatef(err, "error while NewResultFromResult")
 		}
 
 		if len(result.IPs) == 0 {
@@ -126,7 +133,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 		ipAddr := result.IPs[0].Address.IP.To4()
 		// conjure a MAC based on the IP for Overlay
-		macAddr := fmt.Sprintf("%v-%02x-%02x-%02x-%02x", n.endpointMacPrefix, ipAddr[0], ipAddr[1], ipAddr[2], ipAddr[3])
+		macAddr := fmt.Sprintf("%v-%02x-%02x-%02x-%02x", n.EndpointMacPrefix, ipAddr[0], ipAddr[1], ipAddr[2], ipAddr[3])
 		// use the HNS network gateway
 		gw := hnsNetwork.Subnets[0].GatewayAddress
 		n.ApplyDefaultPAPolicy(hnsNetwork.ManagementIP)
@@ -158,14 +165,13 @@ func cmdAdd(args *skel.CmdArgs) error {
 		log.Printf("Adding Hns Endpoint %v", hnsEndpoint)
 		return hnsEndpoint, nil
 	})
-
 	if err != nil {
-		return fmt.Errorf("Error while ProvisionEndpoint(%v,%v,%v) :%v", epName, hnsNetwork.Id, args.ContainerID, err)
+		return errors.Annotatef(err, "error while ProvisionEndpoint(%v,%v,%v)", epName, hnsNetwork.Id, args.ContainerID)
 	}
 
 	result, err := hns.ConstructResult(hnsNetwork, hnsEndpoint)
 	if err != nil {
-		return fmt.Errorf("Error while constructResult: %v", err)
+		return errors.Annotatef(err, "error while constructResult")
 	}
 
 	return types.PrintResult(result, cniVersion)
@@ -174,6 +180,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 func cmdDel(args *skel.CmdArgs) error {
 	log.Printf("[cni-net] Processing DEL command with args {ContainerID:%v Netns:%v IfName:%v Args:%v Path:%v}.",
 		args.ContainerID, args.Netns, args.IfName, args.Args, args.Path)
+
 	n, _, err := loadNetConf(args.StdinData)
 	if err != nil {
 		return err
@@ -192,6 +199,11 @@ func cmdDel(args *skel.CmdArgs) error {
 	return hns.DeprovisionEndpoint(epName, args.Netns, args.ContainerID)
 }
 
+func cmdGet(args *skel.CmdArgs) error {
+	// TODO: implement
+	return fmt.Errorf("not implemented")
+}
+
 func main() {
-	skel.PluginMain(cmdAdd, cmdDel, version.All)
+	skel.PluginMain(cmdAdd, cmdGet, cmdDel, version.All, "TODO")
 }

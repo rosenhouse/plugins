@@ -1,9 +1,8 @@
-# L2Bridge  plugin (Windows)
+# L2Bridge plugin (Windows)
 
 ## Overview
 
 With L2bridge plugin, all containers (on the same host) are plugged into an L2Bridge network that has one endpoint in the host namespace.
-
 
 ## Example configuration
 ```
@@ -23,6 +22,6 @@ With L2bridge plugin, all containers (on the same host) are plugged into an L2Br
 
 * `name` (string, required): the name of the network.
 * `type` (string, required): "win-l2bridge".
-* `ipMasq` (string, optional): Set to true to setup NAT for the clusterNetworkPrefix.
-* `clusterNetworkPrefix` (string, optional): Used to setup NAT if ipMasq is set to true.
+* `ipMasq` (bool, optional): the inverse of `$FLANNEL_IPMASQ`, set to true to setup NAT for the `clusterNetworkPrefix`.
+* `clusterNetworkPrefix` (string, optional): setup NAT if `ipMasq` is set to true.
 * `ipam` (dictionary, required): IPAM configuration to be used for this network.

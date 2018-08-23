@@ -1,9 +1,8 @@
-# L2Bridge  plugin (Windows)
+# Overlay plugin (Windows)
 
 ## Overview
 
 With Overlay plugin, all containers (on the same host) are plugged into an Overlay network based on VXLAN encapsulation. 
-
 
 ## Example configuration
 ```
@@ -23,5 +22,6 @@ With Overlay plugin, all containers (on the same host) are plugged into an Overl
 
 * `name` (string, required): the name of the network.
 * `type` (string, required): "win-overlay".
-* `endpointMacPrefix` (string, optional): required for vxlan mode, set to the MAC prefix configured for Flannel  
+* `ipMasq` (bool, optional): the inverse of `$FLANNEL_IPMASQ`, setup NAT for the hnsNetwork subnet.
+* `endpointMacPrefix` (string, optional): set to the MAC prefix configured for Flannel  
 * `ipam` (dictionary, required): IPAM configuration to be used for this network.

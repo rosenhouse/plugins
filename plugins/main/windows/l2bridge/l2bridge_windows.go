@@ -1,4 +1,4 @@
-// Copyright 2014 CNI authors
+// Copyright 2017 CNI authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
-	"net"
 	"runtime"
+	"strings"
+
+	"github.com/juju/errors"
 
 	"github.com/Microsoft/hcsshim"
 	"github.com/containernetworking/cni/pkg/skel"
@@ -29,20 +30,20 @@ import (
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/containernetworking/plugins/pkg/hns"
 	"github.com/containernetworking/plugins/pkg/ipam"
-	"strings"
 )
 
 type NetConf struct {
 	hns.NetConf
 
-	ipmasq               bool      `json:"ipmasq,omitempty"`
-	clusterNetworkPrefix net.IPNet `json:"clusterprefix,omitempty"`
+	IPMasq               bool   `json:"ipMasq"`
+	ClusterNetworkPrefix string `json:"clusterNetworkPrefix,omitempty"`
 }
 type K8sCniEnvArgs struct {
 	types.CommonArgs
-	K8S_POD_NAMESPACE          types.UnmarshallableString `json:"K8S_POD_NAMESPACE,omitempty"`
-	K8S_POD_NAME               types.UnmarshallableString `json:"K8S_POD_NAME,omitempty"`
-	K8S_POD_INFRA_CONTAINER_ID types.UnmarshallableString `json:"K8S_POD_INFRA_CONTAINER_ID,omitempty"`
+
+	PodNamespace types.UnmarshallableString `json:"K8S_POD_NAMESPACE,omitempty"`
+	// PodName             types.UnmarshallableString `json:"K8S_POD_NAME,omitempty"`
+	// PodInfraContainerID types.UnmarshallableString `json:"K8S_POD_INFRA_CONTAINER_ID,omitempty"`
 }
 
 func init() {
@@ -73,19 +74,26 @@ func loadNetConf(bytes []byte) (*NetConf, string, error) {
 func cmdAdd(args *skel.CmdArgs) error {
 	log.Printf("[cni-net] Processing ADD command with args {ContainerID:%v Netns:%v IfName:%v Args:%v Path:%v}.",
 		args.ContainerID, args.Netns, args.IfName, args.Args, args.Path)
+
 	n, cniVersion, err := loadNetConf(args.StdinData)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "error while loadNetConf")
 	}
+
 	cniargs, err := parseCniArgs(args.Args)
-	k8sNamespace := "default"
-	if err == nil {
-		k8sNamespace = string(cniargs.K8S_POD_NAMESPACE)
+	if err != nil {
+		return errors.Annotate(err, "error while parseCniArgs")
 	}
+
+	k8sNamespace := "default"
+	if len(cniargs.PodNamespace) != 0 {
+		k8sNamespace = string(cniargs.PodNamespace)
+	}
+
 	networkName := n.Name
 	hnsNetwork, err := hcsshim.GetHNSNetworkByName(networkName)
 	if err != nil {
-		return err
+		return errors.Annotatef(err, "error while GETHNSNewtorkByName(%f)", networkName)
 	}
 
 	if hnsNetwork == nil {
@@ -102,13 +110,13 @@ func cmdAdd(args *skel.CmdArgs) error {
 		// run the IPAM plugin and get back the config to apply
 		r, err := ipam.ExecAdd(n.IPAM.Type, args.StdinData)
 		if err != nil {
-			return nil, err
+			return nil, errors.Annotatef(err, "error while ipam.ExecAdd")
 		}
 
 		// Convert whatever the IPAM result was into the current Result type
 		result, err := current.NewResultFromResult(r)
 		if err != nil {
-			return nil, err
+			return nil, errors.Annotatef(err, "error while NewResultFromResult")
 		}
 
 		if len(result.IPs) == 0 {
@@ -120,8 +128,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 		gw[len(gw)-1] += 2
 
 		// NAT based on the the configured cluster network
-		if n.ipmasq {
-			n.ApplyOutboundNatPolicy(n.clusterNetworkPrefix.String())
+		if n.IPMasq {
+			n.ApplyOutboundNatPolicy(n.ClusterNetworkPrefix)
 		}
 
 		nameservers := strings.Join(n.DNS.Nameservers, ",")
@@ -147,14 +155,13 @@ func cmdAdd(args *skel.CmdArgs) error {
 		log.Printf("Adding Hns Endpoint %v", hnsEndpoint)
 		return hnsEndpoint, nil
 	})
-
 	if err != nil {
-		return err
+		return errors.Annotatef(err, "error while ProvisionEndpoint(%v,%v,%v)", epName, hnsNetwork.Id, args.ContainerID)
 	}
 
 	result, err := hns.ConstructResult(hnsNetwork, hnsEndpoint)
 	if err != nil {
-		return err
+		return errors.Annotatef(err, "error while constructResult")
 	}
 
 	return types.PrintResult(result, cniVersion)
@@ -163,6 +170,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 func cmdDel(args *skel.CmdArgs) error {
 	log.Printf("[cni-net] Processing DEL command with args {ContainerID:%v Netns:%v IfName:%v Args:%v Path:%v}.",
 		args.ContainerID, args.Netns, args.IfName, args.Args, args.Path)
+
 	n, _, err := loadNetConf(args.StdinData)
 	if err != nil {
 		return err
@@ -181,6 +189,11 @@ func cmdDel(args *skel.CmdArgs) error {
 	return hns.DeprovisionEndpoint(epName, args.Netns, args.ContainerID)
 }
 
+func cmdGet(args *skel.CmdArgs) error {
+	// TODO: implement
+	return fmt.Errorf("not implemented")
+}
+
 func main() {
-	skel.PluginMain(cmdAdd, cmdDel, version.All)
+	skel.PluginMain(cmdAdd, cmdGet, cmdDel, version.All, "TODO")
 }

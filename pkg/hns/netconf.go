@@ -16,19 +16,21 @@ package hns
 
 import (
 	"encoding/json"
-	"github.com/containernetworking/cni/pkg/types"
 	"strings"
+
+	"github.com/containernetworking/cni/pkg/types"
 )
 
 // NetConf is the CNI spec
 type NetConf struct {
 	types.NetConf
-	AdditionalArgs []policyArgument `json:"AdditionalArgs,omitempty"`
+
+	AdditionalArgs []policyArgument `json:"additionalArgs,omitempty"`
 }
 
 type policyArgument struct {
-	Name  string
-	Value map[string]interface{}
+	Name  string                 `json:"name"`
+	Value map[string]interface{} `json:"value"`
 }
 
 // MarshalPolicies converts the Endpoint policies in AdditionalArgs

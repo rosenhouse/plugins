@@ -15,9 +15,8 @@ Read [CONTRIBUTING](CONTRIBUTING.md) for build and test instructions.
 * `ptp`: Creates a veth pair.
 * `vlan`: Allocates a vlan device.
 #### Windows: windows specific
-* `l2bridge`: Creates a bridge, adds the host and the container to it.
-* `overlay`: Creates an overlay interface to the container
-
+* `win-l2bridge`: Creates a bridge, adds the host and the container to it.
+* `win-overlay`: Creates an overlay interface to the container.
 ### IPAM: IP address allocation
 * `dhcp`: Runs a daemon on the host to make DHCP requests on behalf of the container
 * `host-local`: maintains a local database of allocated IPs

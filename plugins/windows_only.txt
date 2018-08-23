@@ -1,0 +1,4 @@
+plugins/ipam/host-local
+plugins/main/windows/l2bridge
+plugins/main/windows/overlay
+plugins/meta/flannel
